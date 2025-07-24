@@ -1,15 +1,13 @@
 import os
 from dotenv import load_dotenv
 import streamlit as st
-import asyncio
-import nest_asyncio  
+import asyncio 
 from roadmap_tool import get_career_roadmap
 from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
 from agents.run import RunConfig
-
+import nest_asyncio 
 nest_asyncio.apply() 
 
-# Load API Key
 load_dotenv()
 external_client = AsyncOpenAI(
     api_key=os.getenv("GEMINI_API_KEY"),
@@ -27,7 +25,6 @@ config = RunConfig(
     tracing_disabled=True
 )
 
-# Define agents
 career_agent = Agent(
     name="CareerAgent",
     instructions="You ask about interests and suggest a career field.",
@@ -47,7 +44,6 @@ job_agent = Agent(
     model=model
 )
 
-# --- Streamlit UI ---
 async def run_agents(interest):
     result1 = await Runner.run(career_agent, interest, run_config=config)
     field = result1.final_output.strip()
@@ -60,9 +56,35 @@ async def run_agents(interest):
 
     return field, skills, jobs
 
-# Streamlit UI
-st.set_page_config(page_title="🎓 Career Mentor", page_icon="🎓")
-st.title("🎓 Career Mentor Agent")
+# Page Config
+st.set_page_config(page_title="🎓 Career Mentor", page_icon="🎓", layout="wide")
+
+st.markdown("""
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .main-title {font-size: 2rem; font-weight: bold; color: #1e3a8a; text-align: center;}
+        .result-box {padding: 20px; border-radius: 12px; margin: 10px 0;}
+        .career {background-color: #dbeafe; color: #1e40af;}
+        .skills {background-color: #dcfce7; color: #166534;}
+        .jobs {background-color: #fee2e2; color: #991b1b;}
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(135deg, #e0f2fe 0%, #fdf2f8 100%);
+        }
+        [data-testid="stSidebar"] {
+            background-color: #1e3a8a;
+            color: white;
+        }
+        [data-testid="stSidebar"] * {
+            color: white;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+st.sidebar.title("⚙️ Career Mentor Options")
+st.sidebar.write("This AI agent helps you explore careers, skills, and job opportunities.")
+st.sidebar.info("Tip: Enter something like **AI, Design, Finance** as your interest!")
+
+st.markdown("<h1 class='main-title'>🎓 Career Mentor Agent</h1>", unsafe_allow_html=True)
 
 with st.form("career_form"):
     interest = st.text_input("💬 What are your interests?")
@@ -72,8 +94,8 @@ if submitted and interest:
     with st.spinner("🤖 Thinking..."):
         field, skills, jobs = asyncio.get_event_loop().run_until_complete(run_agents(interest))
 
-    st.success(f"📌 **Suggested Career**: {field}")
-    st.info(f"📝 **Required Skills**:\n{skills}")
-    st.warning(f"💼 **Possible Jobs**:\n{jobs}")
+    st.markdown(f"<div class='result-box career'>📌 <b>Suggested Career:</b> {field}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='result-box skills'>📝 <b>Required Skills:</b><br>{skills}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='result-box jobs'>💼 <b>Possible Jobs:</b><br>{jobs}</div>", unsafe_allow_html=True)
 
 
